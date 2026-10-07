@@ -1,0 +1,21 @@
+---
+- name: DevOps Week 02 Configuration Management
+  hosts: local
+  become: yes
+  tasks:
+    - name: 1. Install a package (nginx)
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: 2. Create a user (devuser)
+      user:
+        name: devuser
+        state: present
+        shell: /bin/bash
+
+    - name: 3. Start nginx service
+      service:
+        name: nginx
+        state: started
