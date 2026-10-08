@@ -1,6 +1,6 @@
 ---
 - name: DevOps Week 02 Configuration Management
-  hosts: localhost
+  hosts: all
   connection: local
   become: false
   tasks:
@@ -9,7 +9,7 @@
 
     - name: 2. Create sample file
       file:
-        path: ~/devops_test.txt
+        path: /tmp/devops_test.txt
         state: touch
 
     - name: 3. Display completion message

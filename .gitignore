@@ -1,0 +1,4 @@
+.aws/
+*.pem
+*.tfstate*
+.terraform/
