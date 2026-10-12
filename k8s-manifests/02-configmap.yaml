@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  APP_ENV: development
+  APP_PORT: "80"
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2026-10-12T05:46:36Z"
+  name: app-config
+  namespace: dev-env
+  resourceVersion: "587"
+  uid: 6cf800cb-297f-46f7-a730-7a025734c135
