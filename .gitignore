@@ -2,3 +2,4 @@
 *.pem
 *.tfstate*
 .terraform/
+minikube-linux-amd64

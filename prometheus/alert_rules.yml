@@ -1,0 +1,11 @@
+groups:
+  - name: host_alerts
+    rules:
+      - alert: HostHighCpuUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 75
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected on {{ $labels.instance }}"
+          description: "CPU utilization has exceeded 75% for more than 1 minute."
