@@ -6,8 +6,8 @@ pipeline {
         APP_NAME        = 'devops-web-app'
         IMAGE_TAG       = "${BUILD_NUMBER}"
         REGISTRY_CREDS  = 'docker-hub-credentials'
-        PROD_PORT       = '8080'
-        STANDBY_PORT    = '8081'
+        PROD_PORT       = '8082'
+        STANDBY_PORT    = '8083'
     }
 
     stages {
@@ -65,7 +65,7 @@ pipeline {
                     echo "Checking health endpoint of candidate container..."
                     sh '''
                         for i in {1..5}; do
-                            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/health || true)
+                            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/health || true)
                             if [ "$STATUS" -eq 200 ]; then
                                 echo "Health check passed with HTTP 200!"
                                 exit 0
