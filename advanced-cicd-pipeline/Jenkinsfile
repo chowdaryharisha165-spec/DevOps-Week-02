@@ -1,0 +1,95 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_NAME = 'devops-cicd-app'
+        DOCKER_REGISTRY_USER = 'harishachowdary'
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
+        APP_PORT = '5000'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Build & Dependencies') {
+            steps {
+                echo 'Setting up Python virtual environment and installing packages...'
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Automated Test') {
+            steps {
+                echo 'Running automated unit tests...'
+                sh '''
+                    . venv/bin/activate
+                    python3 -m unittest test_app.py
+                '''
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo "Building Docker image: ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}"
+                sh "docker build -t ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER} -t ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest ."
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                echo 'Authenticating and pushing image to Docker Hub...'
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${BUILD_NUMBER}
+                        docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest
+                        docker logout
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy (Rolling Update Simulation)') {
+            steps {
+                echo 'Deploying application container...'
+                sh '''
+                    docker stop ${DOCKER_IMAGE_NAME} || true
+                    docker rm ${DOCKER_IMAGE_NAME} || true
+                    docker run -d --name ${DOCKER_IMAGE_NAME} -p ${APP_PORT}:5000 ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Smoke Test / Verification') {
+            steps {
+                echo 'Verifying application availability...'
+                sh '''
+                    sleep 5
+                    curl -f http://host.docker.internal:${APP_PORT}/ || curl -f http://$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}):5000/ || exit 1
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo "Build #${BUILD_NUMBER} completed and verified successfully!"
+        }
+        failure {
+            echo "Build #${BUILD_NUMBER} failed. Please inspect console logs."
+        }
+    }
+}
