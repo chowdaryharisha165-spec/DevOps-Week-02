@@ -65,7 +65,7 @@ pipeline {
                     echo "Checking health endpoint of candidate container..."
                     sh '''
                         for i in {1..5}; do
-                            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8083/health || true)
+                            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://host.docker.internal:8083/health || true)
                             if [ "$STATUS" -eq 200 ]; then
                                 echo "Health check passed with HTTP 200!"
                                 exit 0
@@ -100,6 +100,7 @@ pipeline {
                 docker rm -f ${APP_NAME}-candidate || true
                 if ! docker ps -f name=${APP_NAME}-live | grep -q ${APP_NAME}-live; then
                     echo "Restoring previous stable container..."
+                docker rm -f ${APP_NAME}-live || true
                     docker run -d --name ${APP_NAME}-live -p ${PROD_PORT}:3000 \
                         ${DOCKER_HUB_USER}/${APP_NAME}:latest || true
                 else
